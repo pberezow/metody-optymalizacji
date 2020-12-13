@@ -1,0 +1,420 @@
+\documentclass{article}
+\title{Metody optymalizacji. Lista 1}
+\author{Piotr Berezowski, 236749}
+
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{enumerate}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{cleveref}
+\usepackage{cases}
+\usepackage{mathtools}
+\usepackage{float}
+\graphicspath{ {./src/} }
+
+\begin{document}
+	\maketitle
+	\pagenumbering{gobble}
+	\newpage
+	\pagenumbering{arabic}
+	
+	\section{Zadanie 1}
+	\subsection{Opis zadania}
+
+    Zadanie polegało na zapisaniu modelu w \textit{GNU MathProg} i następnie użyciu \textit{glpsol} do rozwiązania go i sprawdzenia dla jakich $n$ zwracany wynik 
+    jest dokładny do co najmniej 2 cyfr. Model miał opisywać jeden z testów używanych do weryfikowania dokładności i odporności algorytmów LP.
+    
+    \subsection{Model}
+
+    Szukamy:
+    $$\min{c^T x}$$
+    Przy spełnionych warunkach:
+    $$Ax = b,\ x \geq 0$$
+    gdzie
+    $$a_{ij} = \frac{1}{i + j - 1},\ i, j = 1, \dots, n$$
+    $$c_i = b_i = \sum_{j=1}^{n} \frac{1}{i + j - 1},\ i = 1, \dots, n$$
+    
+    Wiemy, że rozwiązaniem opisanego wyżej zagadnienia jest $x_i = 1$, $i = 1, \dots, n$, a macierz $A$ występująca w zadaniu powoduje złe uwarunkowanie 
+    zadania już dla małych n.
+    
+    \subsection{Rozwiązanie}
+
+    Zaimplementowany model znajduje się w dołączonych do sprawozdania kodach źródłowych w pliku \textit{zad1.mod}. Został on podzielony na dwie części, gdzie jedna 
+    zawiera opis modelu, a druga dane - wartość $n$ dla której chcemy znaleźć rozwiązanie. 
+
+    Poniższa tabela \ref{tab1} zawiera wartość błędu względnego obliczonego dla kolejnych wartości $n$. Błąd względny był obliczany według wzoru:
+    $$\delta = \frac{||x - \tilde{x}||_2}{||x||_2}$$
+
+    \begin{table}[H]
+		\begin{center}
+			\begin{tabular}{c||c}
+				\textbf{n} & \textbf{Błąd względny ($\delta$)} \\
+				\hline
+                1 & $0$ \\
+                2 & $1.053 * 10^{-15}$ \\
+                3 & $3.67158 * 10^{-15}$ \\
+                4 & $3.27016 * 10^{-13}$ \\
+                5 & $3.3514 * 10^{-12}$ \\
+                6 & $6.83336 * 10^{-11}$ \\
+                7 & $1.67869 * 10^{-8}$ \\
+                8 & $0.514059$ \\
+                9 & $0.682911$ \\
+                10 & $0.990388$ \\
+			\end{tabular}
+            \caption{Wyniki dla zadania 1}
+            \label{tab1}
+		\end{center}
+	\end{table}	
+
+    Widzimy, że wyniki są obliczane z akceptowalną dokładnością dla wartości $n \leq 7$. Powyżej tej wartości $n$ błąd względny jest większy niż $0.01$.
+
+
+	\section{Zadanie 2}
+	\subsection{Opis zadania}
+
+    Celem zadania było zapisanie modelu programowania liniowego w \textit{GNU MathProg} dla przedstawionego problemu i rozwiązanie go używając \textit{glpsol}. 
+    
+    \subsection{Model}
+
+        Zdefiniujmy zbiór miast, w których zlokalizowane są przedstawicielstwa firmy $M = \{$Warszawa, Gdańsk, $\dots$, Budapeszt$\}$ oraz zbiór dostępnych typów camperów 
+        $T = \{$Standard, VIP$\}$. Niech $\delta_{ij}$ oznacza odległość między i-tą i j-tą lokalizacją firmy.
+
+        Następnie niech $d_t(m)$ oznacza niedobór campera typu $t$ w mieście $m$, a $s_t(m)$ oznacza nadmiar campera typu $t$ w mieście $m$.
+
+        Na końcu zdefiniujmy $c_t$ jako koszt przemieszczenia kampera typu $t$ o 1 km.
+
+    \subsubsection{Zmienne decyzyjne}
+
+        Zmienne decyzyjne wyznaczające ilość samochodów typu $t$ transportowanych z lokacji $i$ do $j$ definiujemy jako:
+
+        $$x_{t_{ij}} \geq 0, \ t \in T, \ i,j \in M$$
+
+    \subsubsection{Ograniczenia}
+
+        \begin{itemize}
+            \item Ilość camperów typu $t$, która wyjeżdża z miasta $m$ nie może przekroczyć podaży (nadmiaru) camperów w tym mieście:
+                $$\sum_{j \in M} x_{t_{mj}} \leq s_t(m), \ t \in T, m \in M$$
+
+            \item Ilość wszystkich camperów, które są dostarczane do miasta $m$ musi być co najmniej równa niedoborowi wszystkich camperów w tym mieście:
+                $$\sum_{i \in M}\sum_{t \in T} x_{t_{im}} \geq \sum_{t \in T}d_t(m), \ m \in M$$
+
+            \item Ilość camperów typu VIP, które są dostarczane do miasta $m$ musi być co najmniej równa niedoborowni camperów typu VIP w tym mieście:
+                $$\sum_{i \in M} x_{t_{im}} \geq d_{t}(m), \ t = VIP, m \in M$$
+        \end{itemize}
+
+    \subsubsection{Funkcja celu}
+
+        Funkcja celu opisuje taki plan transportu camperów, którego koszt całkowity jest najmniejszy. Przyjmuje następującą postać:
+
+        $$\min \sum_{t \in T} \sum_{i \in M} \sum_{j \in M} x_{t_{ij}} c_t \delta_{ij}$$
+
+        Wyrażenie $c_t \delta_{ij}$ określa koszt transportu jednego campera typu $t$ z miasta $i$ do miasta $j$.
+    
+    \subsection{Rozwiązanie}
+    
+        Implementacja modelu znajduje się w dołączonym pliku \textit{zad2.mod}. Dane dla przedstawionego zadania znajdują się w pliku \textit{zad2.dat}.
+        
+        Tabela \ref{tab2} zawiera optymalny plan transportu dla zdefiniowanych danych. Koszt całkowity dla wyznaczonego planu wyniósł $20686.2$.
+        
+        \begin{table}[H]
+            \begin{center}
+                \begin{tabular}{c|c|c|c}
+                    \textbf{Źródło} & \textbf{Cel} & \textbf{\#VIP} & \textbf{\#Standard} \\
+                    \hline
+                    Warszawa  &  Gdańsk  & 14  & 0  \\ 
+                    Gdańsk  &  Gdańsk  & 0  & 2  \\ 
+                    Szczecin  &  Gdańsk  & 4  & 0  \\ 
+                    Szczecin  &  Berlin  & 8  & 4  \\ 
+                    Wrocław  &  Warszawa  & 0  & 4  \\ 
+                    Wrocław  &  Wrocław  & 0  & 2  \\ 
+                    Wrocław  &  Kraków  & 0  & 4  \\ 
+                    Kraków  &  Wrocław  & 6  & 0  \\ 
+                    Kraków  &  Koszyce  & 4  & 0  \\ 
+                    Rostok  &  Berlin  & 0  & 2  \\ 
+                    Rostok  &  Rostok  & 0  & 2  \\ 
+                    Lipsk  &  Berlin  & 0  & 3  \\ 
+                    Lipsk  &  Lipsk  & 0  & 3  \\ 
+                    Lipsk  &  Praga  & 0  & 4  \\ 
+                    Praga  &  Berlin  & 3  & 0  \\ 
+                    Praga  &  Brno  & 7  & 0  \\ 
+                    Brno  &  Brno  & 0  & 2  \\ 
+                    Bratysława  &  Bratysława  & 0  & 4  \\ 
+                    Bratysława  &  Budapeszt  & 0  & 4  \\ 
+                    Koszyce  &  Kraków  & 0  & 4  \\ 
+                    Budapeszt  &  Budapeszt  & 0  & 4  \\ 
+                \end{tabular}
+                \caption{Optymalny plan transportu. Koszt całkowity dla wyznaczonego planu transportu jest równy $20686.2$}
+                \label{tab2}
+            \end{center}
+        \end{table}	    
+    
+        Wprowadzenie dodatkowego założenia co do całkowitoliczbowości zmiennych decyzyjnych $x_{t_{ij}}$ nie jest potrzebne.
+    
+
+    \section{Zadanie 3}
+	\subsection{Opis zadania}
+
+        Celem zadania było zapisanie modelu programowania liniowego w \textit{GNU MathProg} dla przedstawionego problemu i rozwiązanie go używając \textit{glpsol}. 
+        Problem dotyczył planowania produkcji czterech mieszanek (produktów) w pewnej firmie. 
+        Produkty są wytwarzane przy użyciu trzech rodzajów surowców. Służą one do produkcji dwóch produktów podstawowych. 
+        Podczas wytwarzania produktów podstawowych powstają odpady, które mogą być dalej użyte do produkcji dwóch produktów drugorzędnych, 
+        które wymagają również odpowiedniej ilości surowców. Odpady, które nie zostaną zużyte podczas produkcji produktów drugorzędnych muszą zostać 
+        zniszczone.
+        Należało wyznaczyć taki plan, który zmaksymalizuje zyski firmy.
+    
+    \subsection{Model}
+
+        Zdefiniujmy zbiór mieszanek produkowanych przez firmę $M = \{A, B, C, D\}$, oraz zbiór surowców $S = \{s_1, s_2, s_3\}$.
+        Niech $L_i, \ i \in S$ oznacza minimalną ilość $i$-tego surowca jaką firma musi kupić, a $U_i, \ i \in S$ oznacza maksymalną 
+        ilość $i$-tego surowca jaką firma jest w stanie przetworzyć.
+
+        Niech $w_{ij}, \ i \in S, \ j \in M$ oznacza współczynnik strat $i$-tego surowca dla $j$-tej mieszanki (współczynnik opisujący ilość powstałych odpadów).
+
+        Niech $v_i, \ i \in M$ oznacza cenę 1 kg $i$-tej mieszanki.
+        
+        Niech $c_i, \ i \in S$ oznacza koszt za 1 kg $i$-tego surowca.
+
+        Niech $u_{ij}, \ i \in S, \ j \in M$ oznacza koszt utylizacji odpadów powstałych z $i$-tego surowca przy produkcji $j$-tej mieszanki.
+
+    \subsubsection{Zmienne decyzyjne}
+
+        \begin{itemize}
+            \item Zmienne decyzyjne wyznaczające ilość $i$-tego surowca, która została przeznaczona na produkcję $j$-tej mieszanki:
+                $$x_{ij} \geq 0, \ i \in S, \ j \in M$$
+
+            \item Zmienne decyzyjne wyznaczające ilość odpadów $i$-tego surowca, powstałych przy produkcji mieszanki $A$, przeznaczonych do 
+                produkcji surowca $C$:
+                $$y_{Ai} \geq 0, \ i \in S$$
+
+            \item Zmienne decyzyjne wyznaczające ilość odpadów $i$-tego surowca, powstałych przy produkcji mieszanki $B$, przeznaczonych do 
+                produkcji surowca $D$:
+                $$y_{Bi} \geq 0, \ i \in S$$
+        \end{itemize}
+
+
+    \subsubsection{Ograniczenia}
+
+        \begin{itemize}
+            \item Górne i dolne ograniczenie na ilość surowca jaką firma musi zakupić:
+                $$L_i \leq \sum_{j \in M} x_{ij} \leq U_i, \ i \in S$$
+
+            \item Ograniczenia modelujące zmienne $y_{Ai}$ oraz $y_{Bi}$, które warunkują ilość odpadów przeznaczonych do dalszej produkcji:
+            
+                $$y_{Ai} \leq w_{iA} x_{iA}, \ i \in S$$
+                $$y_{Bi} \leq w_{iB} x_{iB}, \ i \in S$$
+
+            \item Ograniczenia warunkowane przez skład każdej z mieszanek:
+                \begin{enumerate}
+                    \item Mieszanka $A$:
+                        $$x_{s_{1}A} \geq 0.2 \sum_{i \in S} x_{iA}$$
+                        $$x_{s_{2}A} \geq 0.4 \sum_{i \in S} x_{iA}$$
+                        $$x_{s_{3}A} \leq 0.1 \sum_{i \in S} x_{iA}$$
+                    \item Mieszanka $B$:
+                        $$x_{s_{1}B} \geq 0.1 \sum_{i \in S} x_{iB}$$
+                        $$x_{s_{3}B} \leq 0.3 \sum_{i \in S} x_{iB}$$
+                    \item Mieszanka $C$:
+                        $$x_{s_{1}C} = 0.2 (x_{s_{1}C} + \sum_{i \in S} y_{Ai})$$
+                        $$x_{s_{2}C} = 0$$
+                        $$x_{s_{3}C} = 0$$
+                    \item Mieszanka $D$:
+                        $$x_{s_{1}D} = 0$$
+                        $$x_{s_{2}D} = 0.3 (x_{s_{2}D} + \sum_{i \in S} y_{Bi})$$
+                        $$x_{s_{3}D} = 0$$
+                \end{enumerate}
+        \end{itemize}
+
+    \subsubsection{Funkcja celu}
+
+        Funkcja zysku firmy będzie składać się z trzech składowych - kosztu zakupu surowców, kosztu utylizacji odpadów produkcyjnych oraz zysku ze 
+        sprzedaży wytworzonych mieszanek. Całkowity zysk możemy więc zapisać jako:
+
+        $$F = P - C_s - C_u$$ gdzie $P$ jest całkowitym zyskiem ze sprzedaży mieszanek, $C_s$ jest kosztem zakupu wszystkich surowców, a 
+        $C_u$ jest kosztem utylizacji wszystkich odpadów powstałych podczas produkcji.
+
+        Koszt zakupu wszystkich surowców zapisujemy jako:
+
+        $$C_s = \sum_{i \in S} \sum_{j \in M} c_i x_{ij}$$
+
+        Koszt utylizacji odpadów zapisujemy jako:
+
+        $$C_u = \sum_{i \in S} \sum_{j \in \{A, B\}} u_{ij} (w_{ij} x_{ij} - y_{ji})$$
+
+        Zysk ze sprzedaży mieszanek zapisujemy jako:
+
+        $$P = P_A + P_B + P_C + P_D$$
+
+        gdzie $P_i$ oznacza zysk uzyskany ze sprzedaży $i$-tej mieszanki.
+
+        $$P_A = v_A \sum_{i \in S} (1-w_{iA}) x_{iA}$$
+        $$P_B = v_B \sum_{i \in S} (1-w_{iB}) x_{iB}$$
+        $$P_C = v_C (x_{s_{1}C} + \sum_{i \in S} y_{Ai})$$
+        $$P_D = v_D (x_{s_{2}D} + \sum_{i \in S} y_{Bi})$$
+
+        Naszym celem jest maksymalizacja zysku, a więc nasza funkcja celu będzie miała postać:
+        $$\max{F} = \max{P - C_s - C_u}$$
+
+    \subsection{Rozwiązanie}
+
+        Implementacja modelu, razem z danymi znajduje się w dołączonym pliku \textit{zad3.mod}.
+            
+        W tabeli \ref{tab3} przedstawiono ilości poszczególnych surowców jakie powinny zostać użyte do produkcji mieszanek dla optymalnego planu produkcji.
+
+        \begin{table}[H]
+            \begin{center}
+                \begin{tabular}{c||c|c|c|c|c}
+                    \textbf{Surowiec} & \textbf{A} & \textbf{B} & \textbf{C} & \textbf{D} & \textbf{Razem} \\
+                    \hline
+                    1   & 1175.09   & 4725.03   & 99.8825   & 0   & 6000 \\ 
+                    2   & 940.071   & 4059.93   & 0   & 0   & 5000 \\ 
+                    3   & 235.018   & 3764.98   & 0   & 0   & 4000 \\
+                \end{tabular}
+                \caption{Ilość zakupionych surowców i ich rozkład między poszczególne produkty.}
+                \label{tab3}
+            \end{center}
+        \end{table}	        
+
+        W tabeli \ref{tab4} przedstawiono ilości odpadów jakie powstały w czasie produkcji mieszanek $A$ i $B$. Wartość w kolumnie \textit{Użyte} określa 
+        ilość odpadów, jaka musi być użyta do produkcji produktów drugorzędnych, z kolei wartość w kolumnie \textit{Zniszczone} przedstawia ilość odpadów 
+        jaką należy poddać utylizacji. 
+
+        \begin{table}[H]
+            \begin{center}
+                \begin{tabular}{c|c||c|c|c}
+                    \textbf{Produkt} & \textbf{Surowiec} & \textbf{Użyte} & \textbf{Zniszczone} & \textbf{Razem} \\ 
+                    \hline
+                    A   & 1   & 117.509   & 0   & 117.509 \\ 
+                    A   & 2   & 188.014   & 0   & 188.014 \\ 
+                    A   & 3   & 94.0071   & 0   & 94.0071 \\ 
+                    A   & 1 + 2 + 3   & 399.53   & 0   & 399.53 \\ 
+                    \hline
+                    B   & 1   & 0   & 945.006   & 945.006 \\ 
+                    B   & 2   & 0   & 811.986   & 811.986 \\ 
+                    B   & 3   & 0   & 1882.49   & 1882.49 \\ 
+                    B   & 1 + 2 + 3   & 0   & 3639.48   & 3639.48 \\
+                \end{tabular}
+                \caption{Ilość odpadów otrzymanych z produkcji mieszanek A i B.}
+                \label{tab4}
+            \end{center}
+        \end{table}
+
+        Optymalny zysk dla optymalnego rozwiązania jest równy $2986.89\$$.
+
+    \section{Zadanie 4}
+	\subsection{Opis zadania}
+
+        Celem zadania było zapisanie modelu programowania całkowitoliczbowego w \textit{GNU MathProg} dla przedstawionego problemu i rozwiązanie go 
+        używając \textit{glpsol}.
+
+        Problem dotyczył układania planu zajęć dla studenta. Należało tak ułożyć plan, aby jak najlepiej wpasował się w preferencje studenta.
+    
+    \subsection{Model}
+
+        Zdefiniujmy zbiór wymaganych kursów jako $C = \{$Algebra, Analiza, Fizyka, Chemia min., Chemia org.$\}$.
+        
+        Zdefiniujmy zbiór dostępnych grup dla każdego z kursów jako $G = \{$I, II, III, IV$\}$.
+        
+        Zdefiniujmy zbiór dni tygodnia jako $D = \{$Pn, Wt, Śr, Cz, Pt$\}$.
+        
+        Zdefiniujmy zbiór dostępnych grup treningowych jako $T = \{t_1, t_2, t_3\}$.
+
+        Niech $W_{cg}$ będzie ilością punktów preferencyjnych przyznanych przez studenta 
+        $g$-tej grupie $c$-tego kursu.
+
+        Niech $p$ określa jakiś okres czasu. Wybierzmy wartość $p$ w taki sposób, 
+        aby dobę dało się podzielić na całkowitą liczbę okresów długości $p$ oraz, aby 
+        każdy z kursów również dał się podzielić na całkowitą ilość okresów długości $p$.
+
+        Niech $n$ określa ilość okresów czasu długości $p$, które mieszczą się w dobie.
+
+        Niech $Z_{cgdi}, \ c \in C, \ g \in G, \ d \in D \ i \in \{0,1,\dots,n\}$ będzie wartością binarną, która określa czy 
+        $g$-ta grupa $c$-tego kursu odbywa się $d$-tego dnia podczas $i$-tego przedziału czasu.
+
+        Analogicznie dla treningów, niech $S_{tdi}, \ t \in T, \ d \in D, \ i \in \{0,1,\dots,n\}$ będzie 
+        wartością binarną, która określa czy trening $t$ odbywa się $d$-tego dnia podczas 
+        $i$-tego przedziału czasu.
+
+    \subsubsection{Zmienne decyzyjne}
+
+        Zmienne decyzyjne opisujące plan zajęć studenta:
+        \begin{equation*}
+            x_{cg} =
+            \begin{cases}
+                1, & \text{jeśli grupa $g$ kursu $c$ zalicza się do planu studenta} \\
+                0, & \text{w przeciwnym przypadku}
+            \end{cases}
+            \text{, gdzie $g \in G$, $c \in C$}
+        \end{equation*}
+        
+
+        \begin{equation*}
+            y_{t} =
+            \begin{cases}
+                1, & \text{jeśli trening $t$ zalicza się do plan studenta} \\
+                0, & \text{w przeciwnym przypadku}
+            \end{cases}
+            \text{, gdzie $t \in T$}
+        \end{equation*}
+        
+    \subsubsection{Ograniczenia}
+
+        \begin{itemize}
+            \item Wybieramy dokładnie jedną grupę z każdego kursu:
+                $$\sum_{g \in G} x_{cg} = 1, \ c \in C$$
+            
+            \item Każdego dnia łączny czas zajęć studenta jest nie większy niż $l * p$:
+                $$\sum_{c \in C} \sum_{g \in G} \sum_{i \in \{0,1,\dots,n\}} x_{cg} Z_{cgdi} \leq lp, \ d \in D$$
+                
+            \item Student ma $v$ przedziałów czasu wolnego między przedziałami $l$ oraz $u$ każdego dnia: 
+                $$\sum_{c \in C} \sum_{g \in G} \sum_{i \in \{l, \dots, u-1\}} x_{cg} Z_{cgdi} \leq u - l - v, \ d \in D$$
+
+            \item Zajęcia w planie nie nakładają się czasowo:
+                $$\sum_{c \in C} \sum_{g \in G} x_{cg} Z_{cgdi} + \sum_{t \in T} y_{t} S_{tdi} \leq 1, \ d \in D, \ i \in \{0, \dots, n\}$$
+
+            \item Student ma minimum jeden trening w tygodniu:
+                $$\sum_{t \in T} y_{t} \geq 1$$
+
+        \end{itemize}
+
+    \subsubsection{Funkcja celu}
+
+        Dla przedstawionego problemu, chcemy wyznaczyć taki plan zajęć, którego całkowita 
+        ilość punktów preferencyjnych będzie maksymalna, przy spełnionych ograniczeniach 
+        przedstawionych w poprzedniej sekcji.
+
+        Możemy więc zapisać funkcję celu jako:
+
+        $$\max{\sum_{c \in C} \sum_{g \in G} x_{cg} W_{cg}}$$
+
+    \subsection{Rozwiązanie}
+    
+        Implementacja modelu, razem z danymi znajduje się w dołączonym pliku \textit{zad4.mod}.
+
+        W tabeli \ref{tab5} przedstawiono optymalny plan zajęć spełniający ograniczenia 
+        nałożone przez zadanie. Ilość punktów preferencyjnych dla tego planu jest 
+        równa 37.
+
+        \begin{table}[H]
+            \begin{center}
+                \begin{tabular}{c|c}
+                    \textbf{Przedmiot} & \textbf{Wybrana grupa} \\ 
+                    \hline
+                    Algebra     & III \\
+                    Analiza     & II \\
+                    Fizyka      & IV \\
+                    Chemia min. & I \\
+                    Chemia org. & II 
+                \end{tabular}
+                \caption{Optymalny plan zajęć dla podstawowych ograniczeń.}
+                \label{tab5}
+            \end{center}
+        \end{table}
+
+        Dodatkowo, należało odpowiedzieć na pytanie, czy istnieje taki plan zajęć, 
+        dla którego zajęcia zgrupowane byłyby w trzech dniach (poniedziałek, wtorek i czwartek) 
+        oraz wszystkie miałyby ocenę wyższą niż 5.
+
+        Nie udało się znaleźć plan spełniający dodatkowe ograniczenia.
+
+
+\end{document}

@@ -1,0 +1,339 @@
+\documentclass{article}
+\title{Metody optymalizacji. Lista 2}
+\author{Piotr Berezowski, 236749}
+
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{enumerate}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{cases}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{cleveref}
+\graphicspath{ {./src/} }
+
+\begin{document}
+	\maketitle
+	\pagenumbering{gobble}
+	\newpage
+	\pagenumbering{arabic}
+	
+	\section{Zadanie 1}
+	\subsection{Opis zadania}
+
+    Opisany w zadaniu problem należy sformułować w postaci zadania programowania całkowitoliczbowego. Następnie korzystając pakietu JuMP 
+    rozwiązać problem przy użyciu solvera GLPK lub Cbc.
+    
+    Chcemy zebrać dane liczbowe na temat $m$ różnych cech populacji. Dane zapisane są w chmurze w $n$ różnych miejscach. Czas potrzebny na przeszukanie 
+    $i$-tego miejsca jest równy $T_i$. Zakładamy, że czas ten nie zależy od liczby odczytywanych cech. Dane dotyczące każdej z cech mogą znajdować się 
+    w kilku miejscach. Chcemy wyznaczyć zbiór miejsc, które trzeba przeszukać, aby zebrać informacje o wszystkich cechach jednocześnie minimalizując 
+    całkowity czas potrzebny na odczytanie tych cech.
+
+    \subsection{Model}
+
+    Zdefiniujmy zbiór $n$ serwerów jako $S = \{1, 2, \dots, m\}$, oraz zbiór $m$ cech jako $C = \{1, 2, \dots, n\}$. Niech 
+    $T_j$, $j \in S$, oznacza czas potrzebny na przeszukanie $j$-tego serwera. Niech $q_{ij}, \ i \in C, \ j \in S$ przyjmuje wartość $1$ 
+    jeśli dane dotyczące $i$-tej cechy znajdują się na $j$-tym serwerze. W przeciwnym przypadku $q_{ij} = 0$.
+
+    \subsubsection{Zmienne decyzyjne}
+
+        Zmienne decyzyjne określające które serwery należy przeszukać definiujemy jako:
+
+        \begin{equation*}
+            x_{j} =
+            \begin{cases}
+                1, & \text{jeśli serwer $j$ będzie przeszukany} \\
+                0, & \text{w przeciwnym przypadku}
+            \end{cases}
+            \text{, gdzie $j \in S$}
+        \end{equation*}
+
+    \subsubsection{Ograniczenia}
+
+    Ograniczenia modelują następujące sytuacje:
+        \begin{itemize}
+            \item Należy odczytać informacje dotyczące wszystkich cech:
+                $$\sum_{j \in S} x_{j} q_{ij} \geq 1, \ i \in C$$
+
+            \item Binarność zmeinnych decyzyjnych:
+                $$x_j \in \{0, 1\}, j \in S$$
+
+        \end{itemize}
+
+    \subsubsection{Funkcja celu}
+
+        Funkcja celu przyjmuje postać:
+
+        $$\sum_{j \in S} x_j T_j$$
+    
+    \subsection{Rozwiązanie}
+    
+    Implementacja modelu wraz z przykładowymi danymi znajduje się w pliku \textit{zad1.jl}.
+
+    Rozwiązano problem dla następujących danych:
+
+    \begin{itemize}
+        \item Ilość cech: $7$
+        \item Ilość serwerów: $6$
+        \item Czasy odczytu dla kolejnych serwerów: $1, 2, 5, 2, 4, 10$
+        \item Wartości $q_{ij}$:
+        \begin{table}[H]
+            \begin{center}
+                \begin{tabular}{c||c|c|c|c|c|c||c}
+                     & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} & \textbf{5} & \textbf{6} & \textbf{S} \\ 
+                    \hline
+                    \hline
+                    \textbf{1} & 1 & 0 & 0 & 1 & 0 & 0 &  \\
+                    \hline
+                    \textbf{2} & 0 & 1 & 0 & 0 & 1 & 0 &  \\
+                    \hline
+                    \textbf{3} & 0 & 0 & 1 & 0 & 0 & 1 &  \\
+                    \hline
+                    \textbf{4} & 1 & 0 & 0 & 1 & 0 & 0 &  \\
+                    \hline
+                    \textbf{5} & 0 & 1 & 0 & 0 & 1 & 0 &  \\
+                    \hline
+                    \textbf{6} & 0 & 0 & 1 & 0 & 0 & 1 &  \\
+                    \hline
+                    \textbf{7} & 0 & 0 & 0 & 0 & 0 & 1 &  \\
+                    \hline
+                    \hline
+                    \textbf{C} &  &  &  &  &  &  &  \\
+                \end{tabular}
+                \caption{Macierz $q$}
+                \label{tab1}
+            \end{center}
+        \end{table}
+    \end{itemize}
+
+    Dla podanych danych minimalny czas przeszukiwania serwerów jest równy $13$. Należy przeszukać serwery: $1, 2$ i $6$.
+
+    \section{Zadanie 2}
+	\subsection{Opis zadania}
+
+    Opisany w zadaniu problem należy sformułować w postaci zadania programowania całkowitoliczbowego. Następnie korzystając pakietu JuMP 
+    rozwiązać problem przy użyciu solvera GLPK lub Cbc.
+
+    Niech $P_{ij}$ będzie $j$-tym podprogramem obliczania funkcji $i$ należącym do biblioteki podprogramów 
+    ($i \in \{1,\dots ,m\},\ j \in \{1,\dots,n\}$).
+    Podprogram $P_{ij}$ zajmuje $r_{ij}$ komórek pamięci i potrzeba na jego wykonanie $t_{ij}$ jednostek czasu.
+    Dla zadanego zbioru funkcji $I, \ I \subseteq \{1, \dots, m\}$ należy ułożyć program $P$ obliczający zbiór tych funkcji, w taki sposób, 
+    żeby zajmował on nie więcej niż $M$ komórek pamięci, oraz jego czas wykonania był minimalny.
+
+    \subsection{Model}
+    
+      
+    \subsubsection{Zmienne decyzyjne}
+
+    \begin{itemize}
+        \item Zmienne określające czy podprogram $P_{ij}$ wchodzi w skład programu $P$:
+        \begin{equation*}
+            x_{ij} =
+            \begin{cases}
+                1, & \text{jeśli podprogram $P_{ij}$ należy do programu $P$} \\
+                0, & \text{w przeciwnym przypadku}
+            \end{cases}
+            \text{, $i \in \{1,\dots, m\},\ j \in \{1,\dots, n\}$}
+        \end{equation*}  
+    \end{itemize}
+
+
+    \subsubsection{Ograniczenia}
+
+    Ograniczenia modelują następujące sytuacje:
+    \begin{itemize}
+        \item Wybieramy tylko jeden podprogram dla każdej funkcji obliczanej w $P$:
+            $$\sum_{j \in \{1, \dots, n\}} x_{ij} = 1, \ i \in I$$
+        
+        \item Maksymalne zużycie pamięci nie może przekroczyć wartości $M$:
+            $$\sum_{i \in \{1, \dots, m\}} \sum_{j \in \{1, \dots, n\}} x_{ij} r_{ij} \leq M$$
+
+        \item Binarność zmiennych decyzyjnych:
+            $$x_{ij} \in \{0, 1\},\ i \in \{1,\dots, m\},\ j \in \{1,\dots, n\}$$
+    \end{itemize}
+    
+    \subsubsection{Funkcja celu}
+
+    Funkcja celu przyjmuje postać:
+        $$\sum_{i \in \{1,\dots, m\}} \sum_{j \in \{1,\dots, n\}} x_{ij} t_{ij}$$
+
+    \subsection{Rozwiązanie}
+
+    Implementacja modelu wraz z przykładowymi danymi znajduje się w pliku \textit{zad2.jl}.
+
+    Rozwiązano problem dla następujących danych:
+
+    \begin{itemize}
+        \item Ilość funkcji w bibliotece: $m = 5$
+        \item Ilość podprogramów obliczających poszczególne funkcje: $n = 4$
+        \item Wartości $r_{ij}$:
+            \begin{table}[H]
+                \begin{center}
+                    \begin{tabular}{c||c|c|c|c}
+                        & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} \\ 
+                        \hline
+                        \hline
+                        \textbf{1} & 10 & 1 & 1 & 2 \\
+                        \hline
+                        \textbf{2} & 2 & 2 & 3 & 1 \\
+                        \hline
+                        \textbf{3} & 2 & 3 & 1 & 1 \\
+                        \hline
+                        \textbf{4} & 2 & 3 & 1 & 1 \\
+                        \hline
+                        \textbf{5} & 2 & 3 & 1 & 1 \\
+                    \end{tabular}
+                    \caption{Wartości $r_{ij},\ i \in \{1, \dots, 5\},\ j \in \{1, \dots, 4\}$}
+                    \label{tab2}
+                \end{center}
+            \end{table}
+        \item Wartości $t_{ij}$:
+            \begin{table}[H]
+                \begin{center}
+                    \begin{tabular}{c||c|c|c|c}
+                        & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} \\ 
+                        \hline
+                        \hline
+                        \textbf{1} & 1 & 4 & 5 & 2 \\
+                        \hline
+                        \textbf{2} & 1 & 2 & 2 & 5 \\
+                        \hline
+                        \textbf{3} & 4 & 2 & 5 & 6 \\
+                        \hline
+                        \textbf{4} & 4 & 2 & 5 & 6 \\
+                        \hline
+                        \textbf{5} & 4 & 2 & 5 & 6 \\
+                    \end{tabular}
+                    \caption{Wartości $t_{ij},\ i \in \{1, \dots, 5\},\ j \in \{1, \dots, 4\}$}
+                    \label{tab2}
+                \end{center}
+            \end{table}
+        \item Maksymalna dostępna ilość pamięci dla programu: $M = 10$
+        \item Zbiór funkcji z których składa się program $P$: $I = \{1, 2, 3, 4, 5\}$
+    \end{itemize}
+
+    Dla podanych danych otrzymano rozwiązanie:
+
+    \begin{table}[H]
+        \begin{center}
+            \begin{tabular}{c|c}
+                \textbf{Funkcja} & \textbf{Podprogram} \\ 
+                \hline
+                1 & 4 \\
+                2 & 1 \\
+                3 & 2 \\
+                4 & 1 \\
+                5 & 3 \\
+            \end{tabular}
+            \caption{Rozwiązanie zadania. Całkowity czas programu jest równy $14$.}
+            \label{tab3}
+        \end{center}
+    \end{table}
+
+    \section{Zadanie 3}
+	\subsection{Opis zadania}
+
+    Opisany w zadaniu problem należy sformułować w postaci zadania programowania całkowitoliczbowego. Następnie korzystając z pakietu JuMP 
+    rozwiązać problem przy użyciu solvera GLPK lub Cbc.
+
+    Dany jest zbiór zadań $Z={1, \dots, n}$, które mają być wykonywane na trzech procesorach $P_1, P_2$ i $P_3$. Zakładamy, że:
+    \begin{itemize}
+        \item każdy procesor może wykonywać w danym momencie tylko jedno zadanie,
+        \item każde zadanie musi być wykonywana najpierw na procesorze $P_1$ następnie na procesorze $P_2$ i na końcu na procesorze $P_3$,
+        \item kolejność wykonywania zadań na wszystkich trzech procesorach jest taka sama.
+    \end{itemize}
+    Dla każdego zadania $i \in Z$ są zadane czasy trwania $a_i, b_i$ oraz $c_i$ odpowiednio na procesorach $P_1$, $P_2$ i $P_3$. 
+    Wszystkie dane są dodatnimi liczbami całkowitymi. Każdy harmonogram jest jednoznacznie określony przez pewną permutację
+    $\pi = (\pi(1), \dots, \pi(n))$ zadań należących do zbioru $Z$. Niech $C_{\pi(k)}$ oznacza czas zakończenia $k$-go zadania na 
+    procesorze $P_3$ dla permutacji $\pi$. Celem jest wyznaczenie permutacji $\pi$ takiej, że:
+    $$C_{\max} = C_{\pi(n)} \rightarrow \min$$.
+       
+    \subsection{Model}
+
+    Niech $P = \{P_1, P_2, P_3\}$ będzie zbiorem procesorów. Niech $t_{pj}$ określa czas trwania zadania $j$ na procesorze $p$, wtedy 
+    $t_{P_1j} = a_j$, $t_{P_2j} = b_j$ oraz $t_{P_3j} = c_j$. Niech $B$ będzie bardzo dużą liczbą.
+
+    \subsubsection{Zmienne decyzyjne}
+
+    Wprowadźmy następujące zmienne:
+    \begin{itemize}
+        \item Zmienne określające moment rozpoczęcia $j$-tego zadania na $i$-tym procesorze:
+            $$x_{ij} \geq 0, \ i \in P, \ j \in Z$$
+        \item Zmienne pomocnicze określające czy zadanie $i$ jest wykonywane przed zadaniem $j$:
+            \begin{equation*}
+                y_{ij} =
+                \begin{cases}
+                    1, & \text{jeśli zadanie $i$ jest wykonywane przed zadaniem $j$} \\
+                    0, & \text{w przeciwnym przypadku}
+                \end{cases}
+                \text{, $i \in Z,\ j \in Z,\ i \neq j$}
+            \end{equation*}  
+        \item Zmienna pomocnicza modelująca moment zakończenia ostatniego zadania na procesorze $P_3$:
+            $$M \geq 0$$
+    \end{itemize}
+        
+    \subsubsection{Ograniczenia}
+
+        Ograniczenia modelują następujące sytuacje:
+        \begin{itemize}
+            \item Zachowanie kolejności procesorów - zadanie musi zostać wykonane na poprzednim procesorze, aby mogło być liczone na kolejnym:
+        \end{itemize}
+                $$x_{P_1j} + t_{P_1j} \leq x_{P_2j},\ j \in Z,$$
+                $$x_{P_2j} + t_{P_2j} \leq x_{P_3j},\ j \in Z$$
+        
+        \begin{itemize}
+            \item Zadania nie nakładają się - każdy procesor może obliczać jedno zadanie w tym samym czasie:
+        \end{itemize}
+                $$x_{pi} - x_{pj} + B y_{ij} \geq t_{pj},\ p \in P,\ i \in Z,\ j \in Z$$
+                $$x_{pj} - x_{pi} + B (1 - y_{ij}) \geq t_{pi},\ p \in P,\ i \in Z,\ j \in Z$$
+        
+        \begin{itemize}
+            \item Ograniczenia modelujące wartość zmiennej $M = \max_{j \in Z} x_{P_3j} + t_{P_3j}$:
+        \end{itemize}
+                $$x_{P_3j} + d_{P_3j} \leq M,\ j \in Z$$
+
+        \begin{itemize}
+            \item Binarność zmiennych pomocniczych $y_{ij}$:
+        \end{itemize}
+                $$y_{ij} \in \{0, 1\},\ i \in Z,\ j \in Z,\ i \neq j$$
+
+    \subsubsection{Funkcja celu}
+
+        Funkcja celu przyjmuje postać: 
+        $$M$$
+
+    \subsection{Rozwiązanie}
+    
+    Implementacja modelu wraz z przykładowymi danymi znajduje się w pliku \textit{zad3.jl}.
+
+    Rozwiązano problem dla następujących danych:
+
+    \begin{itemize}
+        \item Ilość zadań: $n = 5$
+        \item Czasy wykonania zadań na poszczególnych procesorach:
+            \begin{table}[H]
+                \begin{center}
+                    \begin{tabular}{c||c|c|c|c|c||c}
+                         & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} & \textbf{5} & \textbf{Z} \\ 
+                        \hline
+                        \hline
+                        \textbf{$P_1$} & 1 & 2 & 3 & 4 & 5 &  \\
+                        \hline
+                        \textbf{$P_2$} & 2 & 3 & 4 & 3 & 2 &  \\
+                        \hline
+                        \textbf{$P_3$} & 1 & 2 & 3 & 1 & 2 &  \\
+                        \hline
+                        \hline
+                        \textbf{$P$} &  &  &  &  &  &  \\
+                    \end{tabular}
+                    \caption{Wartości $t_{ij},\ i \in P,\ j \in Z$}
+                    \label{tab4}
+                \end{center}
+            \end{table}
+    \end{itemize}
+
+    Dla podanych danych otrzymano rozwiązanie:
+    $\pi = (2, 4, 3, 1, 5)$
+
+\end{document}

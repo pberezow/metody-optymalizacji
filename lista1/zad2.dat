@@ -1,0 +1,34 @@
+# Author: Piotr Berezowski, 236749
+
+data;
+
+set CarTypes := 'standard' 'vip';
+
+set Cities := 'Warszawa' 'Gdańsk' 'Szczecin' 'Wrocław' 'Kraków' 'Berlin' 'Rostok' 'Lipsk' 'Praga' 'Brno' 'Bratysława' 'Koszyce' 'Budapeszt';
+
+param Distance: 'Warszawa' 'Gdańsk' 'Szczecin' 'Wrocław' 'Kraków' 'Berlin' 'Rostok' 'Lipsk' 'Praga' 'Brno' 'Bratysława' 'Koszyce' 'Budapeszt' := 
+    'Warszawa'    0         355      566        348       293      574      805      726     638     539    661          507       783
+    'Gdańsk'      355       0        359        549       596      501      612      730     751     765    887          772       1087
+    'Szczecin'    566       359      0          394       647      150      262      364     498     703    826          894       1026
+    'Wrocław'     348       549      394        0         272      346      582      383     332     302    413          518       613
+    'Kraków'      293       596      647        272       0        599      835      635     535     332    455          248       397
+    'Berlin'      574       501      150        346       599      0        231      190     349     554    677          845       877
+    'Rostok'      805       612      262        582       835      231      0        384     578     783    906          1074      1106
+    'Lipsk'       726       730      364        383       635      190      384      0       255     460    582          874       783
+    'Praga'       638       751      498        332       535      349      578      255     0       206    328          662       529
+    'Brno'        539       765      703        302       332      554      783      460     206     0      131          477       332
+    'Bratysława'  661       887      826        413       455      677      906      582     328     131    0            406       201
+    'Koszyce'     507       772      894        518       248      845      1074     874     662     477    406          0         260
+    'Budapeszt'   783       1087     1026       613       397      877      1106     783     529     332    201          260       0;
+
+param CostMultiplier := 'standard' 1 'vip' 1.15;
+
+param CarSupply: 'Warszawa' 'Gdańsk' 'Szczecin' 'Wrocław' 'Kraków' 'Berlin' 'Rostok' 'Lipsk' 'Praga' 'Brno' 'Bratysława' 'Koszyce' 'Budapeszt' :=
+    'vip'         0          2        4          10        0        0        4        10      0       2      8            4        4
+    'standard'    14         0        12         0         10       0        0        0       10      0      0            0        0;
+
+param CarDemand: 'Warszawa' 'Gdańsk' 'Szczecin' 'Wrocław' 'Kraków' 'Berlin' 'Rostok' 'Lipsk' 'Praga' 'Brno' 'Bratysława' 'Koszyce' 'Budapeszt' :=
+    'vip'         4          0        0          0         8        4        0        0       4       0      0            0         0
+    'standard'    0          20       0          8         0        16       2        3       0       9      4            4         8;
+
+end;
